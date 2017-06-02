@@ -1,13 +1,57 @@
-web:
-    image: nginx:latest
-    ports:
-        - "8080:80"
-    volumes:
-        - ./web:/web
-        - ./site.conf:/etc/nginx/conf.d/site.conf
-    links:
-        - php
-php:
-    image: php:7-fpm
-    volumes:
-        - ./web:/web
+version: '2'
+
+volumes:
+  data-jenkins:
+    driver: "local"
+services:
+    web:
+        image: nginx:latest
+        ports:
+            - "8000:80"
+        volumes:
+            - ./web:/web
+            - ./site.conf:/etc/nginx/conf.d/site.conf
+        depends_on:
+            - "php"
+            - "mysqldb"
+    php:
+        image: php:7-fpm
+        volumes:
+            - ./web:/web
+    myadmin:
+        image: phpmyadmin/phpmyadmin
+        container_name: phpmyadmin
+        ports:
+            - "8080:80"
+        environment:
+            - PMA_ARBITRARY=1
+            - PMA_HOST=mysql
+        restart: always
+        depends_on:
+            - "mysqldb"
+    mysqldb:
+        image: mysql
+        container_name: mysql
+        restart: always
+        environment:
+            - MYSQL_DATABASE=test
+            - MYSQL_ROOT_PASSWORD=root
+            - MYSQL_USER=dev
+            - MYSQL_PASSWORD=dev
+        ports:
+            - 3306:3306
+#JENKINS DEPLOY
+    jenkins:
+        image: "jenkins:2.19.2"
+        ports:
+            - "49001:8080"
+        restart: "always"
+        volumes:
+            - "data-jenkins:/var/jenkins_home"
+
+#        volumes:
+#            - db_data:/var/lib/mysql
+
+
+
+
